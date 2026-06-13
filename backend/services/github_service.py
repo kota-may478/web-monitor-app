@@ -259,7 +259,7 @@ jobs:
       JOB_STATE_JSON: ${{{{ secrets.JOB_{id8}_STATE }}}}
       RESEND_API_KEY: ${{{{ secrets.RESEND_API_KEY }}}}
       RESEND_FROM_EMAIL: ${{{{ secrets.RESEND_FROM_EMAIL }}}}
-      GITHUB_TOKEN_FOR_SECRETS: ${{{{ secrets.GITHUB_PAT }}}}
+      GITHUB_TOKEN_FOR_SECRETS: ${{{{ secrets.REPO_PAT }}}}
       GITHUB_REPO: "{repo_name}"
     steps:
       - uses: actions/checkout@v4

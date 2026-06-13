@@ -40,8 +40,8 @@ SYSTEM_PROMPT = """あなたはWebモニタリングの専門家です。
 - email_formatのbody_templateには {{new_items}} {{all_items}} {{scan_date}} {{topic}} を含める
 - 日本語のサイトを優先して提案する"""
 
-MODEL_PRIMARY = "gemini-2.5-flash-preview-05-20"
-MODEL_FALLBACK = "gemini-1.5-flash"
+MODEL_PRIMARY = "gemini-2.5-flash"
+MODEL_FALLBACK = "gemini-2.0-flash"
 
 
 def _get_client() -> genai.Client:
@@ -102,7 +102,7 @@ async def analyze_and_propose(
             last_error = e
 
     if text is None:
-        raise RuntimeError(f"LLM呼び出しに失敗しました: {last_error}") from last_error
+        raise RuntimeError(str(last_error)) from last_error
 
     try:
         data = _extract_json(text)

@@ -48,11 +48,11 @@ For first-time setup (GitHub repo, secrets, Render deploy), follow **[docs/SETUP
 ## Deploy (overview)
 
 1. Push to GitHub (`main`)
-2. Add system secrets: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `GITHUB_PAT`, `RENDER_DEPLOY_HOOK_URL`
+2. Add system secrets: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `REPO_PAT`, `RENDER_DEPLOY_HOOK_URL`
 3. Deploy backend (Docker) and frontend (static) on Render
 4. Pushes to `backend/**` or `frontend/**` trigger deploy via `.github/workflows/deploy.yml`
 
-Details: [docs/SETUP.md §7](docs/SETUP.md#7-deploy-to-render)
+Details: [docs/SETUP.md §7](docs/SETUP.md#7-deploy-to-render) · Email test: [§8](docs/SETUP.md#8-verify-end-to-end-email-via-github-actions)
 
 ## How it works
 
@@ -140,11 +140,11 @@ cd .. && bash scripts/dev.sh
 ## デプロイ（概要）
 
 1. GitHub に push（`main`）
-2. システム用 Secrets を登録: `RESEND_API_KEY`、`RESEND_FROM_EMAIL`、`GITHUB_PAT`、`RENDER_DEPLOY_HOOK_URL`
+2. システム用 Secrets を登録: `RESEND_API_KEY`、`RESEND_FROM_EMAIL`、`REPO_PAT`、`RENDER_DEPLOY_HOOK_URL`
 3. Render でバックエンド（Docker）とフロントエンド（Static Site）をデプロイ
 4. `backend/**` または `frontend/**` への push で `.github/workflows/deploy.yml` により自動デプロイ
 
-詳細: [docs/SETUP.md §7（日本語）](docs/SETUP.md#7-render-へのデプロイ)
+詳細: [docs/SETUP.md §7（日本語）](docs/SETUP.md#7-render-へのデプロイ) · メール受信テスト: [§8](docs/SETUP.md#8-エンドツーエンド確認メール受信テスト)
 
 ## 動作の流れ
 
