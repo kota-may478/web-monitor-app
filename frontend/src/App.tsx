@@ -3,8 +3,10 @@ import type { AgentResponse, JobRequest } from './types';
 import { StepInput } from './components/StepInput';
 import { StepProposal } from './components/StepProposal';
 import { StepComplete } from './components/StepComplete';
+import { JobManagePage } from './components/JobManagePage';
 
 type Step = 'input' | 'proposal' | 'complete';
+type View = 'wizard' | 'manage';
 
 const STEP_LABELS = ['入力', '確認', '完了'] as const;
 const STEP_KEYS: Step[] = ['input', 'proposal', 'complete'];
@@ -47,6 +49,7 @@ function StepIndicator({ current }: { current: Step }) {
 }
 
 export default function App() {
+  const [view, setView] = useState<View>('wizard');
   const [step, setStep] = useState<Step>('input');
   const [agentResponse, setAgentResponse] = useState<AgentResponse | null>(null);
   const [jobRequest, setJobRequest] = useState<JobRequest | null>(null);
@@ -70,40 +73,67 @@ export default function App() {
     setCompletedJobId(null);
   };
 
+  const goToWizard = () => {
+    handleReset();
+    setView('wizard');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/40">
       <header className="border-b border-slate-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-6 py-3 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <span className="font-semibold text-slate-800 text-sm tracking-tight">Web Monitor</span>
+        <div className="max-w-2xl mx-auto px-6 py-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={goToWizard}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <span className="font-semibold text-slate-800 text-sm tracking-tight">Web Monitor</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('manage')}
+            className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
+              view === 'manage'
+                ? 'bg-indigo-50 text-indigo-700'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+            }`}
+          >
+            ジョブ管理
+          </button>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-6 pb-16">
-        <StepIndicator current={step} />
-
-        {step === 'input' && (
-          <StepInput onComplete={handleProposeComplete} />
-        )}
-        {step === 'proposal' && agentResponse && jobRequest && (
-          <StepProposal
-            agentResponse={agentResponse}
-            jobRequest={jobRequest}
-            onConfirm={handleConfirmComplete}
-            onBack={handleReset}
-          />
-        )}
-        {step === 'complete' && jobRequest && completedJobId && (
-          <StepComplete
-            jobId={completedJobId}
-            jobRequest={jobRequest}
-            siteCount={agentResponse?.sites.length ?? 0}
-            onAddAnother={handleReset}
-          />
+        {view === 'manage' ? (
+          <JobManagePage onNewJob={goToWizard} />
+        ) : (
+          <>
+            <StepIndicator current={step} />
+            {step === 'input' && (
+              <StepInput onComplete={handleProposeComplete} />
+            )}
+            {step === 'proposal' && agentResponse && jobRequest && (
+              <StepProposal
+                agentResponse={agentResponse}
+                jobRequest={jobRequest}
+                onConfirm={handleConfirmComplete}
+                onBack={handleReset}
+              />
+            )}
+            {step === 'complete' && jobRequest && completedJobId && (
+              <StepComplete
+                jobId={completedJobId}
+                jobRequest={jobRequest}
+                siteCount={agentResponse?.sites.length ?? 0}
+                onAddAnother={handleReset}
+              />
+            )}
+          </>
         )}
       </main>
     </div>

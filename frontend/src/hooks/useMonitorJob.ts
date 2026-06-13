@@ -4,8 +4,10 @@ import type {
   AgentResponse,
   ConfirmJobResponse,
   JobDefinition,
+  JobDetail,
   JobRequest,
   JobSummary,
+  UpdateJobRequest,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -106,5 +108,49 @@ export function useMonitorJob() {
     }
   };
 
-  return { propose, confirmJob, fetchJobs, deleteJob, loading, error };
+  const fetchJob = async (jobId: string): Promise<JobDetail> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get<JobDetail>(
+        `${API_BASE_URL}/api/jobs/${jobId}`,
+        { headers: AUTH_HEADERS }
+      );
+      return response.data;
+    } catch (err) {
+      const isLegacy = axios.isAxiosError(err) && err.response?.status === 404;
+      const message = isLegacy
+        ? 'このジョブは旧形式のため編集できません。削除して再登録してください。'
+        : axios.isAxiosError(err)
+        ? formatApiError(err.response?.data?.detail, err.response?.status)
+        : 'ジョブ詳細の取得に失敗しました';
+      setError(message);
+      throw Object.assign(new Error(message), { isLegacy });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateJob = async (jobId: string, data: UpdateJobRequest): Promise<{ id8: string }> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.put<{ success: boolean; job_id: string; id8: string }>(
+        `${API_BASE_URL}/api/jobs/${jobId}`,
+        data,
+        { headers: AUTH_HEADERS }
+      );
+      return { id8: response.data.id8 };
+    } catch (err) {
+      const message = axios.isAxiosError(err)
+        ? formatApiError(err.response?.data?.detail, err.response?.status)
+        : 'ジョブ更新に失敗しました';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { propose, confirmJob, fetchJobs, fetchJob, updateJob, deleteJob, loading, error };
 }

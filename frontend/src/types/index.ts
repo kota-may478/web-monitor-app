@@ -55,3 +55,25 @@ export interface ConfirmJobResponse {
   job_id: string;
   id8: string;
 }
+
+export interface JobDetail {
+  id: string;
+  query: string;
+  schedule_cron: string;
+  schedule_label: string;
+  sites: SiteProposal[];
+  email_format: EmailFormat;
+  created_at: string;
+  active: boolean;
+  email_hidden: boolean;
+}
+
+export interface UpdateJobRequest {
+  query: string;
+  schedule_cron: string;
+  schedule_label: string;
+  sites: SiteProposal[];
+  email_format: EmailFormat;
+  email: string;
+  active: boolean;
+}
