@@ -1,0 +1,27 @@
+name: "Monitor|【対象】博士取得後1年目（29歳）の大学研究者。専門は電気電|5sites|毎週土曜日 9:00 JST|2026-06-13T08:24:34.112Z"
+on:
+  schedule:
+    - cron: "0 0 * * 6"
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    env:
+      JOB_ID: "864cf65b-0762-4721-aad8-a085008a1ad2"
+      JOB_DEF_JSON: ${{ secrets.JOB_864CF65B_DEF }}
+      JOB_STATE_JSON: ${{ secrets.JOB_864CF65B_STATE }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GITHUB_TOKEN_FOR_SECRETS: ${{ secrets.REPO_PAT }}
+      GITHUB_REPO: "kota-may478/web-monitor-app"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r scheduler/requirements.txt
+      - name: Run monitor job
+        run: python scheduler/run_job.py
