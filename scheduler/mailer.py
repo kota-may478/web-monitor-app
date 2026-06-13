@@ -33,7 +33,10 @@ def format_items_as_html(items: list[dict]) -> str:
     アイテムが0件の場合は "<p>（新着なし）</p>" を返す。
     """
     if not items:
-        return "<p>（新着なし）</p>"
+        return (
+            "<p>（該当なし — スクレイピング結果0件。"
+            "ジョブ管理画面で監視サイトのURL・キーワードを確認してください）</p>"
+        )
 
     lines = ["<ul>"]
     for item in items:

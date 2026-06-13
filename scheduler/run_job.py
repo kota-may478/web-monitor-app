@@ -67,6 +67,13 @@ def main() -> None:
         except Exception as e:
             logger.error("スクレイピング失敗 (%s): %s", site.get("url", ""), e)
 
+    logger.info("全サイト合計: %d件のアイテム", len(all_current_items))
+    if not all_current_items:
+        logger.warning(
+            "スクレイピング結果が0件です。CSSセレクタの不一致やキーワードの厳しすぎる"
+            "設定が原因の可能性があります。ジョブ管理画面でサイト設定を見直してください。"
+        )
+
     # 4-5. 差分検出
     try:
         new_items = diff_checker.detect_new_items(all_current_items, previous_items)
