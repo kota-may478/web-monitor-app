@@ -10,10 +10,27 @@ import resend
 logger = logging.getLogger(__name__)
 
 
+def topic_short(topic: str, max_len: int = 60) -> str:
+    """件名用: 改行を除き先頭行を最大 max_len 文字に切り詰める。"""
+    first_line = topic.replace("\r\n", "\n").replace("\r", "\n").split("\n")[0].strip()
+    collapsed = " ".join(first_line.split())
+    if not collapsed:
+        return "（無題）"
+    if len(collapsed) > max_len:
+        return collapsed[: max_len - 1] + "…"
+    return collapsed
+
+
+def sanitize_email_subject(subject: str) -> str:
+    """Resend は subject フィールドに改行を許可しない。"""
+    flattened = subject.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+    return " ".join(flattened.split()).strip()
+
+
 def render_template(template: str, **kwargs: object) -> str:
     """
     {{key}} 形式のプレースホルダーを kwargs の値で置換する。
-    対応キー: topic, date, scan_date, new_items, all_items
+    対応キー: topic, topic_short, date, scan_date, new_items, all_items
     """
     result = template
     for key, value in kwargs.items():
@@ -83,22 +100,18 @@ def send_report(
     scan_date = now.strftime("%Y-%m-%d %H:%M UTC")
     date_str = now.strftime("%Y-%m-%d")
 
-    subject = render_template(
-        subject_template,
-        topic=topic,
-        date=date_str,
-        scan_date=scan_date,
-        new_items=new_items,
-        all_items=all_items,
+    template_kwargs = {
+        "topic": topic,
+        "topic_short": topic_short(topic),
+        "date": date_str,
+        "scan_date": scan_date,
+        "new_items": new_items,
+        "all_items": all_items,
+    }
+    subject = sanitize_email_subject(
+        render_template(subject_template, **template_kwargs)
     )
-    body = render_template(
-        body_template,
-        topic=topic,
-        date=date_str,
-        scan_date=scan_date,
-        new_items=new_items,
-        all_items=all_items,
-    )
+    body = render_template(body_template, **template_kwargs)
 
     # プレーンテキストを簡易HTMLに変換
     if not body.strip().startswith("<"):

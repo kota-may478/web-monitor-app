@@ -24,7 +24,7 @@ FALLBACK_KEYWORDS = [
 ]
 
 
-def _is_safe_url(url: str) -> bool:
+def is_safe_url(url: str) -> bool:
     """プライベートIPやlocalhostへのリクエストを防ぐ（SSRF対策）"""
     try:
         parsed = urlparse(url)
@@ -172,7 +172,7 @@ async def scrape_site(
         [{"text": str, "url": str, "found_keywords": list[str]}]
         最大20件を返す。
     """
-    if not _is_safe_url(url):
+    if not is_safe_url(url):
         logger.warning("スクレイピングをブロック（プライベートIP/不正スキーム）: %s", url)
         return []
 

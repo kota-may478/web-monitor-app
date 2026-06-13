@@ -140,7 +140,9 @@ def main() -> None:
         mailer.send_report(
             recipient_email=job_def.get("email", ""),
             from_email=from_email,
-            subject_template=email_format.get("subject_template", "[レポート] {{topic}}"),
+            subject_template=email_format.get(
+                "subject_template", "[レポート] {{topic_short}} - {{date}}"
+            ),
             body_template=email_format.get("body_template", "{{new_items}}\n{{all_items}}"),
             topic=query,
             new_items=new_items,

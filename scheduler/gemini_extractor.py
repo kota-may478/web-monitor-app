@@ -169,5 +169,12 @@ def extract_items(
         if normalized:
             results.append(normalized)
 
-    logger.info("Gemini抽出: %s → %d件", page_url, len(results))
+    if not results and len(page_text.strip()) > 300:
+        logger.info(
+            "Gemini抽出: %s → 0件（ページテキスト %d 文字 — テーマ条件に合う公募がない可能性）",
+            page_url,
+            len(page_text),
+        )
+    else:
+        logger.info("Gemini抽出: %s → %d件", page_url, len(results))
     return results
