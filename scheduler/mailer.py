@@ -1,5 +1,6 @@
 """Resend APIメール送信"""
 
+import html
 import logging
 import os
 from datetime import datetime, timezone
@@ -20,7 +21,7 @@ def render_template(template: str, **kwargs: object) -> str:
         if key in ("new_items", "all_items") and isinstance(value, list):
             replacement = format_items_as_html(value)
         else:
-            replacement = str(value) if value is not None else ""
+            replacement = html.escape(str(value)) if value is not None else ""
         result = result.replace(placeholder, replacement)
     return result
 
@@ -36,12 +37,12 @@ def format_items_as_html(items: list[dict]) -> str:
 
     lines = ["<ul>"]
     for item in items:
-        text = item.get("text", "")
-        url = item.get("url", "")
+        text = html.escape(item.get("text", "")[:200])
+        url = html.escape(item.get("url", ""))
         if url:
-            lines.append(f'  <li><a href="{url}">{text[:200]}</a></li>')
+            lines.append(f'  <li><a href="{url}">{text}</a></li>')
         else:
-            lines.append(f"  <li>{text[:200]}</li>")
+            lines.append(f"  <li>{text}</li>")
     lines.append("</ul>")
     return "\n".join(lines)
 

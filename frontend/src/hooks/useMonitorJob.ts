@@ -9,10 +9,9 @@ import type {
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_KEY = import.meta.env.VITE_API_KEY || '';
+const AUTH_HEADERS = API_KEY ? { 'X-Api-Key': API_KEY } : {};
 
-/**
- * Web監視ジョブのAPI操作カスタムフック
- */
 export function useMonitorJob() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +22,8 @@ export function useMonitorJob() {
     try {
       const response = await axios.post<AgentResponse>(
         `${API_BASE_URL}/api/agent/propose`,
-        request
+        request,
+        { headers: AUTH_HEADERS }
       );
       return response.data;
     } catch (err) {
@@ -43,7 +43,8 @@ export function useMonitorJob() {
     try {
       const response = await axios.post<ConfirmJobResponse>(
         `${API_BASE_URL}/api/jobs/confirm`,
-        { job }
+        { job },
+        { headers: AUTH_HEADERS }
       );
       return { job_id: response.data.job_id, id8: response.data.id8 };
     } catch (err) {
@@ -61,7 +62,7 @@ export function useMonitorJob() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<JobSummary[]>(`${API_BASE_URL}/api/jobs`);
+      const response = await axios.get<JobSummary[]>(`${API_BASE_URL}/api/jobs`, { headers: AUTH_HEADERS });
       return response.data;
     } catch (err) {
       const message = axios.isAxiosError(err)
@@ -79,7 +80,8 @@ export function useMonitorJob() {
     setError(null);
     try {
       const response = await axios.delete<{ success: boolean }>(
-        `${API_BASE_URL}/api/jobs/${jobId}`
+        `${API_BASE_URL}/api/jobs/${jobId}`,
+        { headers: AUTH_HEADERS }
       );
       return response.data.success;
     } catch (err) {

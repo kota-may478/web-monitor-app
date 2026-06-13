@@ -203,6 +203,7 @@ bash scripts/dev.sh
 | `RESEND_API_KEY` | Step 4 |
 | `RESEND_FROM_EMAIL` | `onboarding@resend.dev` |
 | `FRONTEND_URL` | Planned frontend URL (update in step 7C to the **actual** URL after deploy) |
+| `API_KEY` | Random secret for API authentication. Generate with `openssl rand -hex 32`. If unset, auth is disabled. |
 
 5. **Deploy Web Service** and note the URL (e.g. `https://web-monitor-app-backend.onrender.com`)
 6. **Settings → Deploy Hook** → copy URL → add as `RENDER_DEPLOY_HOOK_URL` in GitHub Secrets (step 6)
@@ -215,8 +216,9 @@ bash scripts/dev.sh
    - Root Directory: `frontend`
    - Build Command: `npm install && npm run build`
    - Publish Directory: `dist` (relative to Root Directory — **not** `frontend/dist`)
-3. Environment variable:
+3. Environment variables:
    - `VITE_API_BASE_URL` = backend URL from step A (e.g. `https://web-monitor-app-backend.onrender.com`)
+   - `VITE_API_KEY` = Same value as `API_KEY`. Bundled into the frontend at build time.
 4. **Deploy Static Site** and note the **actual** URL shown on the dashboard
 
 > **Render URL note:** If `web-monitor-app.onrender.com` is taken, Render assigns a suffix (e.g. `https://web-monitor-app-032r.onrender.com`). Always use the URL Render displays — not the name you typed.
@@ -463,6 +465,7 @@ bash scripts/dev.sh
 | `RESEND_API_KEY` | 手順4 |
 | `RESEND_FROM_EMAIL` | `onboarding@resend.dev` |
 | `FRONTEND_URL` | フロントの予定 URL（手順7Cで **実際の URL** に更新） |
+| `API_KEY` | API 認証用のランダムシークレット。`openssl rand -hex 32` で生成。未設定の場合は認証無効。 |
 
 5. **Deploy Web Service** → URL をメモ（例: `https://web-monitor-app-backend.onrender.com`）
 6. **Settings → Deploy Hook** の URL を `RENDER_DEPLOY_HOOK_URL` として GitHub Secrets に追加（手順6）
@@ -477,6 +480,7 @@ bash scripts/dev.sh
    - Publish Directory: `dist`（Root Directory からの相対パス。**`frontend/dist` ではない**）
 3. 環境変数:
    - `VITE_API_BASE_URL` = 手順Aのバックエンド URL
+   - `VITE_API_KEY` = `API_KEY` と同じ値。フロントエンドのビルド時に埋め込まれる。
 4. **Deploy Static Site** → ダッシュボードに表示された **実際の URL** をメモ
 
 > **Render URL について:** `web-monitor-app.onrender.com` が取れない場合、`-032r` などのサフィックスが付く（例: `https://web-monitor-app-032r.onrender.com`）。入力した Name ではなく、**Render が表示した URL** を使う。

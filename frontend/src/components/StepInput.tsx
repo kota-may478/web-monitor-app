@@ -37,82 +37,96 @@ export function StepInput({ onComplete }: StepInputProps) {
     onComplete(request, response);
   };
 
+  const fieldClass =
+    'w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow bg-white';
+
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">🔍 Web Monitor</h1>
-      <p className="text-gray-600 mb-8">
-        調査したい情報を登録すると、LLMが自動でウェブを監視してメールでお知らせします
-      </p>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">
+          監視内容を登録する
+        </h1>
+        <p className="text-slate-500 text-sm">
+          調査テーマを入力すると、AIが最適な監視サイトを提案します
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="query" className="block text-sm font-medium text-gray-700 mb-1">
-            調査したい情報
-          </label>
-          <textarea
-            id="query"
-            rows={4}
-            required
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="例：ヘリコプター体験搭乗の無料イベント情報（東京近郊）"
-            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="schedule" className="block text-sm font-medium text-gray-700 mb-1">
-            調査頻度
-          </label>
-          <select
-            id="schedule"
-            value={scheduleIndex}
-            onChange={(e) => setScheduleIndex(Number(e.target.value))}
-            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            {SCHEDULE_OPTIONS.map((opt, i) => (
-              <option key={opt.cron} value={i}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            通知先メールアドレス
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
-            {error}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="query" className="block text-sm font-semibold text-slate-700 mb-2">
+              調査したい情報
+            </label>
+            <textarea
+              id="query"
+              rows={4}
+              required
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="例：ヘリコプター体験搭乗の無料イベント情報（東京近郊）"
+              className={fieldClass}
+            />
+            <p className="mt-1.5 text-xs text-slate-400">できるだけ具体的に書くと、より的確な提案が得られます</p>
           </div>
-        )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Geminiがウェブを調査中...
-            </span>
-          ) : (
-            '🤖 LLMに調査させる'
+          <div>
+            <label htmlFor="schedule" className="block text-sm font-semibold text-slate-700 mb-2">
+              調査頻度
+            </label>
+            <select
+              id="schedule"
+              value={scheduleIndex}
+              onChange={(e) => setScheduleIndex(Number(e.target.value))}
+              className={fieldClass}
+            >
+              {SCHEDULE_OPTIONS.map((opt, i) => (
+                <option key={opt.cron} value={i}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+              通知先メールアドレス
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className={fieldClass}
+            />
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm">
+              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+              </svg>
+              {error}
+            </div>
           )}
-        </button>
-      </form>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                AIがウェブを調査中...
+              </>
+            ) : (
+              'AIにサイトを提案させる'
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

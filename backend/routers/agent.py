@@ -2,13 +2,14 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from models.schemas import AgentResponse, JobRequest, TestScrapeRequest, TestScrapeResponse
 from services import gemini_agent, scraper
+from services.auth import verify_api_key
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/agent", tags=["agent"])
+router = APIRouter(prefix="/api/agent", tags=["agent"], dependencies=[Depends(verify_api_key)])
 
 
 @router.post("/propose", response_model=AgentResponse)

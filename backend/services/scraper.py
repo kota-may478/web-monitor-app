@@ -1,6 +1,9 @@
 """スクレイピングユーティリティ"""
 
+import ipaddress
 import logging
+import socket
+from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -11,6 +14,32 @@ USER_AGENT = "Mozilla/5.0 (compatible; WebMonitorBot/1.0)"
 MAX_ITEMS = 20
 MAX_TEXT_LENGTH = 500
 TIMEOUT_SECONDS = 15.0
+
+
+def _is_safe_url(url: str) -> bool:
+    """プライベートIPやlocalhostへのリクエストを防ぐ（SSRF対策）"""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+        hostname = parsed.hostname or ""
+        if not hostname:
+            return False
+        try:
+            infos = socket.getaddrinfo(hostname, None)
+        except socket.gaierror:
+            return False
+        for info in infos:
+            addr = info[4][0]
+            try:
+                ip = ipaddress.ip_address(addr)
+                if not ip.is_global or ip.is_private or ip.is_loopback or ip.is_link_local:
+                    return False
+            except ValueError:
+                return False
+        return True
+    except Exception:
+        return False
 
 
 async def scrape_site(
@@ -27,6 +56,10 @@ async def scrape_site(
     """
     results: list[dict] = []
     keywords_lower = [k.lower() for k in keywords]
+
+    if not _is_safe_url(url):
+        logger.warning("スクレイピングをブロック（プライベートIP/不正スキーム）: %s", url)
+        return results
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:

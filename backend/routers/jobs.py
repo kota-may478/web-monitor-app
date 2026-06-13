@@ -4,13 +4,14 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from models.schemas import ConfirmJobRequest, JobDefinition, JobSummary
 from services import github_service
+from services.auth import verify_api_key
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/jobs", tags=["jobs"])
+router = APIRouter(prefix="/api/jobs", tags=["jobs"], dependencies=[Depends(verify_api_key)])
 
 
 @router.post("/confirm")
