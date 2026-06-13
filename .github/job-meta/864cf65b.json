@@ -1,0 +1,96 @@
+{
+  "id": "864cf65b-0762-4721-aad8-a085008a1ad2",
+  "query": "【対象】博士取得後1年目（29歳）の大学研究者。専門は電気電子・機械・航空宇宙・システム設計・制御・最適化・ロボティクス・ドローン・パワーエレクトロニクス・デジタルツイン・AI・建設現場関連。\n\n【探している情報】次のいずれかで、調査実行日から2か月以内に締切がある公募・申請情報：\n- 研究費助成（科研費・JST・JSPS・学会・省庁・財団など）\n- 国際会議参加助成（渡航費・登録費・若手向け）\n- 国内会議参加助成\n\n【除外】締切が2か月超先のみのもの、終了済み公募、対象外（企業員限定・学生限定など明らかに該当しないもの）。\n\n【希望】出典URL・締切日・対象者条件・助成内容が分かる形で網羅的に収集。",
+  "schedule_cron": "0 0 * * 6",
+  "schedule_label": "毎週土曜日 9:00 JST",
+  "sites": [
+    {
+      "url": "https://www.jst.go.jp/pr/info/koubo/index.html",
+      "name": "JST 科学技術振興機構 公募情報",
+      "description": "科学技術イノベーションの推進を担う主要機関であり、若手研究者向けの多様な研究費助成や国際会議関連の公募情報を網羅的に提供しています。",
+      "target_keywords": [
+        "JST",
+        "公募",
+        "募集",
+        "研究費",
+        "助成",
+        "課題",
+        "若手",
+        "プログラム"
+      ],
+      "css_selector": "div.l-contents > div.l-main > section.contents > div.block_contents > div.block_contents_box"
+    },
+    {
+      "url": "https://www.jsps.go.jp/j-grantsinaid/index.html",
+      "name": "JSPS 日本学術振興会 公募情報（科研費等）",
+      "description": "大学研究者の基盤となる科学研究費助成事業（科研費）や、国際交流・若手研究者育成プログラムなど、重要な公募情報が多数掲載されています。",
+      "target_keywords": [
+        "JSPS",
+        "科研費",
+        "学振",
+        "公募",
+        "募集",
+        "助成",
+        "研究費",
+        "国際"
+      ],
+      "css_selector": "div.contentsArea > div.column-wrapper > div.column-item"
+    },
+    {
+      "url": "https://www.mext.go.jp/b_menu/shinchaku/index.htm",
+      "name": "文部科学省 新着情報",
+      "description": "国の科学技術・学術政策に関する公式発表や、関連する研究助成事業の公募情報が発信されるため、重要な情報をいち早く把握できます。",
+      "target_keywords": [
+        "文部科学省",
+        "公募",
+        "募集",
+        "助成",
+        "研究費",
+        "事業",
+        "採択",
+        "締切"
+      ],
+      "css_selector": "div.body > ul.list_normal > li"
+    },
+    {
+      "url": "https://www.kakenhi-navi.jp/search/",
+      "name": "研究者向け公募情報ナビ",
+      "description": "複数の機関からの公募情報を集約しており、若手研究者向けの助成金や国際会議参加助成など、幅広い情報を効率的に検索・確認できます。",
+      "target_keywords": [
+        "公募",
+        "募集",
+        "研究費",
+        "助成",
+        "締切",
+        "申請",
+        "若手",
+        "国際会議"
+      ],
+      "css_selector": "div.new_contents-list > ul.list-group > li.list-group-item"
+    },
+    {
+      "url": "https://www.nedo.go.jp/koubo/index.html",
+      "name": "NEDO 国立研究開発法人 新エネルギー・産業技術総合開発機構 公募情報",
+      "description": "電気電子、機械、AI、ロボティクス、ドローンなどの専門分野と親和性の高い、新技術や産業技術開発に関する大規模な公募情報が期待できます。",
+      "target_keywords": [
+        "NEDO",
+        "公募",
+        "募集",
+        "研究開発",
+        "事業",
+        "助成",
+        "技術",
+        "AI",
+        "ロボット",
+        "ドローン"
+      ],
+      "css_selector": "div.contents-column > div.item-box"
+    }
+  ],
+  "email_format": {
+    "subject_template": "[週次レポート] {{topic}} - {{date}}",
+    "body_template": "## {{topic}} 調査レポート（{{scan_date}}）\n\n### 🆕 新着情報\n{{new_items}}\n\n### 📋 全件\n{{all_items}}"
+  },
+  "created_at": "2026-06-13T08:24:34.112Z",
+  "active": true
+}
