@@ -9,12 +9,12 @@ from typing import Annotated
 
 from fastapi import Header, HTTPException
 
-_API_KEY = os.environ.get("API_KEY", "")
+_API_KEY = os.environ.get("API_KEY", "").strip()
 
 
-async def verify_api_key(x_api_key: Annotated[str | None, Header()] = None) -> None:
+async def verify_api_key(x_api_key: Annotated[str | None, Header(alias="X-Api-Key")] = None) -> None:
     """Dependency: X-Api-Key ヘッダーを検証する"""
     if not _API_KEY:
         return
-    if x_api_key != _API_KEY:
+    if (x_api_key or "").strip() != _API_KEY:
         raise HTTPException(status_code=401, detail="API キーが無効または未指定です")

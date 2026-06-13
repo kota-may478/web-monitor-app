@@ -9,8 +9,19 @@ import type {
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
+const API_KEY = (import.meta.env.VITE_API_KEY || '').trim();
 const AUTH_HEADERS = API_KEY ? { 'X-Api-Key': API_KEY } : {};
+
+function formatApiError(detail: unknown, status?: number): string {
+  const message = typeof detail === 'string' ? detail : 'リクエストに失敗しました';
+  if (status === 401) {
+    if (!API_KEY) {
+      return 'API認証エラー: フロントエンドにAPIキーが埋め込まれていません。Renderの Static Site で VITE_API_KEY を設定し、再デプロイしてください。';
+    }
+    return 'API認証エラー: APIキーが一致しません。Renderの API_KEY と VITE_API_KEY が同じ値か確認してください。';
+  }
+  return message;
+}
 
 export function useMonitorJob() {
   const [loading, setLoading] = useState(false);
@@ -28,7 +39,7 @@ export function useMonitorJob() {
       return response.data;
     } catch (err) {
       const message = axios.isAxiosError(err)
-        ? err.response?.data?.detail || err.message
+        ? formatApiError(err.response?.data?.detail, err.response?.status)
         : '提案の取得に失敗しました';
       setError(message);
       throw new Error(message);
@@ -49,7 +60,7 @@ export function useMonitorJob() {
       return { job_id: response.data.job_id, id8: response.data.id8 };
     } catch (err) {
       const message = axios.isAxiosError(err)
-        ? err.response?.data?.detail || err.message
+        ? formatApiError(err.response?.data?.detail, err.response?.status)
         : 'ジョブ登録に失敗しました';
       setError(message);
       throw new Error(message);
@@ -66,7 +77,7 @@ export function useMonitorJob() {
       return response.data;
     } catch (err) {
       const message = axios.isAxiosError(err)
-        ? err.response?.data?.detail || err.message
+        ? formatApiError(err.response?.data?.detail, err.response?.status)
         : 'ジョブ一覧の取得に失敗しました';
       setError(message);
       throw new Error(message);
@@ -86,7 +97,7 @@ export function useMonitorJob() {
       return response.data.success;
     } catch (err) {
       const message = axios.isAxiosError(err)
-        ? err.response?.data?.detail || err.message
+        ? formatApiError(err.response?.data?.detail, err.response?.status)
         : 'ジョブ削除に失敗しました';
       setError(message);
       throw new Error(message);
