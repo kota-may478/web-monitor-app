@@ -146,3 +146,60 @@ class TestScrapeRequest(BaseModel):
 class TestScrapeResponse(BaseModel):
     results: list[dict] = Field(description="スクレイピング結果")
     count: int = Field(description="結果件数")
+
+
+class JobMeta(BaseModel):
+    """
+    gitリポジトリ (.github/job-meta/{id8}.json) に保存するジョブメタ情報。
+    email はプライバシー保護のため含まない。
+    """
+
+    id: str = Field(description="UUID v4")
+    query: str = Field(description="調査したい内容", max_length=500)
+    schedule_cron: str = Field(description="cron式（UTC基準）")
+    schedule_label: str = Field(description="人間が読める頻度説明", max_length=100)
+    sites: list[SiteProposal] = Field(description="監視サイト一覧")
+    email_format: EmailFormat = Field(description="メールフォーマット")
+    created_at: str = Field(description="ISO8601形式の作成日時")
+    active: bool = Field(default=True, description="ジョブが有効かどうか")
+
+
+class JobDetail(JobMeta):
+    """GET /api/jobs/{id} レスポンス — UIの編集フォーム向け"""
+
+    email_hidden: bool = Field(default=True, description="emailはgitに保存しないため常にtrue")
+
+
+class UpdateJobRequest(BaseModel):
+    """PUT /api/jobs/{id} リクエスト"""
+
+    query: str = Field(description="調査したい内容", max_length=500)
+    schedule_cron: str = Field(description="cron式（UTC基準）")
+    schedule_label: str = Field(description="人間が読める頻度説明", max_length=100)
+    sites: list[SiteProposal] = Field(description="監視サイト一覧")
+    email_format: EmailFormat = Field(description="メールフォーマット")
+    email: str = Field(description="通知先メールアドレス（セキュリティのため毎回入力が必要）")
+    active: bool = Field(default=True, description="ジョブが有効かどうか")
+
+    @field_validator("schedule_cron")
+    @classmethod
+    def validate_cron(cls, v: str) -> str:
+        v = v.strip()
+        if not _CRON_RE.match(v):
+            raise ValueError("無効なcron式です（例: 0 0 * * 6）")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        v = v.strip()
+        if not _EMAIL_RE.match(v):
+            raise ValueError("無効なメールアドレスです")
+        return v
+
+    @field_validator("sites")
+    @classmethod
+    def validate_sites(cls, v: list[SiteProposal]) -> list[SiteProposal]:
+        if len(v) > 10:
+            raise ValueError("監視サイトは最大10件です")
+        return v

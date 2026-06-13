@@ -10,7 +10,7 @@ from github import Github
 from github.GithubException import GithubException
 from github.Repository import Repository
 
-from models.schemas import JobDefinition, JobSummary, ScanState
+from models.schemas import JobDefinition, JobMeta, JobSummary, ScanState
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,12 @@ def _workflow_path(job_id: str) -> str:
     """ワークフローファイルのパスを返す"""
     id8 = job_id[:8].lower()
     return f".github/workflows/job_{id8}.yml"
+
+
+def _meta_path(job_id: str) -> str:
+    """メタファイルのパスを返す"""
+    id8 = job_id[:8].lower()
+    return f".github/job-meta/{id8}.json"
 
 
 def get_repo() -> Repository:
@@ -64,6 +70,61 @@ def count_jobs(repo: Repository | None = None) -> int:
     return count
 
 
+def save_job_meta(repo: Repository, job: JobDefinition) -> bool:
+    """
+    ジョブのメタ情報を .github/job-meta/{id8}.json に保存する。
+    email はプライバシー保護のため保存しない。
+    """
+    meta = JobMeta(
+        id=job.id,
+        query=job.query,
+        schedule_cron=job.schedule_cron,
+        schedule_label=job.schedule_label,
+        sites=job.sites,
+        email_format=job.email_format,
+        created_at=job.created_at,
+        active=job.active,
+    )
+    meta_json = json.dumps(meta.model_dump(), ensure_ascii=False, indent=2)
+    path = _meta_path(job.id)
+    commit_msg = f"Update job meta {job.id[:8]}"
+    try:
+        try:
+            existing = repo.get_contents(path)
+            if not isinstance(existing, list):
+                repo.update_file(path, commit_msg, meta_json, existing.sha)
+            else:
+                repo.create_file(path, commit_msg, meta_json)
+        except GithubException as e:
+            if e.status == 404:
+                repo.create_file(path, commit_msg, meta_json)
+            else:
+                raise
+        return True
+    except Exception as e:
+        logger.exception("メタファイルの保存に失敗: %s", e)
+        return False
+
+
+def get_job_meta(repo: Repository, job_id: str) -> dict | None:
+    """
+    .github/job-meta/{id8}.json を読み込んで dict を返す。
+    ファイルが存在しない場合は None を返す（旧形式ジョブ）。
+    """
+    path = _meta_path(job_id)
+    try:
+        file_content = repo.get_contents(path)
+        if isinstance(file_content, list):
+            return None
+        content = base64.b64decode(file_content.content).decode("utf-8")
+        return json.loads(content)
+    except GithubException as e:
+        if e.status == 404:
+            return None
+        logger.exception("メタファイルの取得に失敗: %s", e)
+        return None
+
+
 def save_job(job: JobDefinition) -> bool:
     """
     ジョブ定義をGitHub Secretsに保存する。
@@ -82,12 +143,36 @@ def save_job(job: JobDefinition) -> bool:
 
         repo.create_secret(_secret_name_def(job.id), job_json)
         repo.create_secret(_secret_name_state(job.id), initial_state)
+        if not save_job_meta(repo, job):
+            logger.warning("メタファイルの保存に失敗しましたが、Secretは保存されました (job %s)", job.id[:8])
         return True
     except GithubException as e:
         logger.exception("ジョブSecretの保存に失敗: %s", e)
         return False
     except Exception as e:
         logger.exception("ジョブSecretの保存中に予期しないエラー: %s", e)
+        return False
+
+
+def update_job(job: JobDefinition) -> bool:
+    """
+    既存ジョブを更新する。
+    1. JOB_{ID8}_DEF Secret を upsert（スケジューラが使用）
+    2. メタファイルを update（UIが使用）
+    3. ワークフロー YAML を update（cron 変更を反映）
+    STATE Secret は変更しない（スキャン履歴を保持）。
+    """
+    try:
+        repo = get_repo()
+        job_json = job.model_dump_json()
+        repo.create_secret(_secret_name_def(job.id), job_json)
+        if not save_job_meta(repo, job):
+            logger.warning("メタファイルの更新に失敗しましたが、Secretは更新されました (job %s)", job.id[:8])
+        if not push_workflow(job):
+            return False
+        return True
+    except Exception as e:
+        logger.exception("ジョブ更新に失敗: %s", e)
         return False
 
 
@@ -225,6 +310,15 @@ def delete_job(job_id: str) -> bool:
             if e.status != 404:
                 logger.warning("ワークフロー %s の削除に失敗: %s", workflow_path, e)
                 return False
+
+        meta_path = _meta_path(job_id)
+        try:
+            file_content = repo.get_contents(meta_path)
+            if not isinstance(file_content, list):
+                repo.delete_file(meta_path, f"Delete job meta {id8}", file_content.sha)
+        except GithubException as e:
+            if e.status != 404:
+                logger.warning("メタファイル %s の削除に失敗: %s", meta_path, e)
 
         return True
     except Exception as e:
