@@ -163,13 +163,14 @@ bash scripts/dev.sh
 **Time:** ~5 min  
 **Goal:** Provide secrets for `scheduler/run_job.py` when GitHub Actions runs.
 
-> **Add only the 4 secrets below.** Do **not** manually add `JOB_****_DEF` / `JOB_****_STATE` — those are created automatically when you register a job in the UI.
+> **Add only the 5 secrets below.** Do **not** manually add `JOB_****_DEF` / `JOB_****_STATE` — those are created automatically when you register a job in the UI.
 
 1. Open `https://github.com/YOUR_USERNAME/web-monitor-app/settings/secrets/actions`
 2. Click **New repository secret** for each row:
 
 | Name | Value |
 |------|-------|
+| `GEMINI_API_KEY` | Same key as step 3 (used by GitHub Actions for LLM extraction on each scheduled run) |
 | `RESEND_API_KEY` | Resend API key (step 4) |
 | `RESEND_FROM_EMAIL` | `onboarding@resend.dev` or your verified address |
 | `REPO_PAT` | **Same** classic PAT as step 2 (`ghp_...`). **Cannot** use names starting with `GITHUB_` — GitHub rejects them (`GITHUB_TOKEN` is also reserved). |
@@ -425,13 +426,14 @@ bash scripts/dev.sh
 **所要時間:** 約5分  
 **目的:** GitHub Actions 実行時に `scheduler/run_job.py` が使う Secrets を登録
 
-> **手動で追加するのは下記4つのみ。** `JOB_****_DEF` / `JOB_****_STATE` は UI でジョブ登録したときに **自動作成** されるので、ここでは追加しない。
+> **手動で追加するのは下記5つのみ。** `JOB_****_DEF` / `JOB_****_STATE` は UI でジョブ登録したときに **自動作成** されるので、ここでは追加しない。
 
 1. `https://github.com/【ユーザー名】/web-monitor-app/settings/secrets/actions` にアクセス
 2. **New repository secret** から1件ずつ追加:
 
 | 名前 | 値 |
 |------|-----|
+| `GEMINI_API_KEY` | 手順3と同じキー（スケジュール実行時の LLM 抽出に使用） |
 | `RESEND_API_KEY` | 手順4の Resend APIキー |
 | `RESEND_FROM_EMAIL` | `onboarding@resend.dev` または確認済みアドレス |
 | `REPO_PAT` | 手順2と **同じ** classic PAT（`ghp_...`）。`GITHUB_` で始まる名前は GitHub 側で登録不可 |

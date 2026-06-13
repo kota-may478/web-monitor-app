@@ -14,6 +14,7 @@ USER_AGENT = (
 )
 MAX_ITEMS = 20
 MAX_TEXT_LENGTH = 500
+MAX_PAGE_TEXT = 8000
 TIMEOUT_SECONDS = 15.0
 TAGS_TO_SCAN = ["p", "li", "h1", "h2", "h3", "h4", "a", "article", "td"]
 # 助成・公募系サイトでよく出る語（Gemini提案キーワードが厳しすぎる場合のフォールバック）
@@ -135,6 +136,59 @@ def _parse_html(
         _collect_headlines_and_links(soup, url, seen_texts, results)
 
     return results
+
+
+def _html_to_page_text(html: str, css_selector: str | None) -> str:
+    """HTMLからLLM向けのプレーンテキストを抽出する。"""
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup(["script", "style", "noscript", "header", "footer", "nav"]):
+        tag.decompose()
+
+    elements = _resolve_elements(soup, css_selector)
+    chunks: list[str] = []
+    seen: set[str] = set()
+
+    for element in elements:
+        if element is None:
+            continue
+        for tag in element.find_all(["h1", "h2", "h3", "h4", "p", "li", "a", "td", "article"]):
+            text = tag.get_text(strip=True)
+            if not text or len(text) < 5 or text in seen:
+                continue
+            seen.add(text)
+            if tag.name in ("h1", "h2", "h3", "h4"):
+                chunks.append(f"\n## {text}\n")
+            elif tag.name == "a" and tag.get("href"):
+                href = tag["href"]
+                chunks.append(f"- {text} ({href})")
+            else:
+                chunks.append(text)
+
+    page_text = "\n".join(chunks).strip()
+    if len(page_text) > MAX_PAGE_TEXT:
+        page_text = page_text[:MAX_PAGE_TEXT] + "\n…（以下省略）"
+    return page_text
+
+
+def fetch_page_text(url: str, css_selector: str | None = None) -> str | None:
+    """
+    URLのHTMLを取得し、LLM入力用のプレーンテキストを返す。
+    失敗時は None。
+    """
+    try:
+        with httpx.Client(timeout=TIMEOUT_SECONDS, follow_redirects=True) as client:
+            response = client.get(url, headers={"User-Agent": USER_AGENT})
+            response.raise_for_status()
+    except Exception as e:
+        logger.warning("ページ取得失敗 (%s): %s", url, e)
+        return None
+
+    try:
+        text = _html_to_page_text(response.text, css_selector)
+        return text if text.strip() else None
+    except Exception as e:
+        logger.warning("ページテキスト化失敗 (%s): %s", url, e)
+        return None
 
 
 def scrape_site(

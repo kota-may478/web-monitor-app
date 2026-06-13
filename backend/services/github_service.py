@@ -353,6 +353,7 @@ jobs:
       JOB_STATE_JSON: ${{{{ secrets.JOB_{id8}_STATE }}}}
       RESEND_API_KEY: ${{{{ secrets.RESEND_API_KEY }}}}
       RESEND_FROM_EMAIL: ${{{{ secrets.RESEND_FROM_EMAIL }}}}
+      GEMINI_API_KEY: ${{{{ secrets.GEMINI_API_KEY }}}}
       GITHUB_TOKEN_FOR_SECRETS: ${{{{ secrets.REPO_PAT }}}}
       GITHUB_REPO: "{repo_name}"
     steps:

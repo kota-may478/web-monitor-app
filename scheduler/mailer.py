@@ -34,18 +34,28 @@ def format_items_as_html(items: list[dict]) -> str:
     """
     if not items:
         return (
-            "<p>（該当なし — スクレイピング結果0件。"
-            "ジョブ管理画面で監視サイトのURL・キーワードを確認してください）</p>"
+            "<p>（該当なし — 調査テーマに関連する情報は見つかりませんでした。"
+            "監視サイトのURLを見直すか、次回のスケジュール実行をお待ちください）</p>"
         )
 
     lines = ["<ul>"]
     for item in items:
-        text = html.escape(item.get("text", "")[:200])
+        title = html.escape((item.get("title") or item.get("text", ""))[:200])
+        summary = html.escape((item.get("summary") or "")[:300])
+        deadline = item.get("deadline")
         url = html.escape(item.get("url", ""))
-        if url:
-            lines.append(f'  <li><a href="{url}">{text}</a></li>')
-        else:
-            lines.append(f"  <li>{text}</li>")
+        source = html.escape(item.get("source_site", ""))
+
+        label = title
+        if deadline:
+            label += f" <span style='color:#666'>（締切: {html.escape(str(deadline))}）</span>"
+
+        inner = f'<a href="{url}">{label}</a>' if url else label
+        if summary:
+            inner += f"<br><span style='color:#555;font-size:0.9em'>{summary}</span>"
+        if source:
+            inner += f"<br><span style='color:#999;font-size:0.8em'>出典: {source}</span>"
+        lines.append(f"  <li>{inner}</li>")
     lines.append("</ul>")
     return "\n".join(lines)
 
