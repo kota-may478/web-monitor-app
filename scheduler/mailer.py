@@ -27,7 +27,12 @@ def sanitize_email_subject(subject: str) -> str:
     return " ".join(flattened.split()).strip()
 
 
-def render_template(template: str, **kwargs: object) -> str:
+def render_template(
+    template: str,
+    *,
+    had_analysis_failures: bool = False,
+    **kwargs: object,
+) -> str:
     """
     {{key}} 形式のプレースホルダーを kwargs の値で置換する。
     対応キー: topic, topic_short, date, scan_date, new_items, all_items
@@ -36,20 +41,40 @@ def render_template(template: str, **kwargs: object) -> str:
     for key, value in kwargs.items():
         placeholder = "{{" + key + "}}"
         if key in ("new_items", "all_items") and isinstance(value, list):
-            replacement = format_items_as_html(value)
+            replacement = format_items_as_html(
+                value, had_analysis_failures=had_analysis_failures
+            )
         else:
             replacement = html.escape(str(value)) if value is not None else ""
         result = result.replace(placeholder, replacement)
     return result
 
 
-def format_items_as_html(items: list[dict]) -> str:
+def format_analysis_failures_notice(failures: list[str]) -> str:
+    """分析失敗サイトがある場合の警告ブロックを返す。"""
+    if not failures:
+        return ""
+    escaped = ", ".join(html.escape(name) for name in failures)
+    return (
+        "<p style='color:#b45309;background:#fffbeb;padding:12px;border-left:4px solid #f59e0b'>"
+        "⚠️ <strong>一部サイトの分析に失敗しました</strong>（APIエラー・ページ取得失敗等）。"
+        f"以下のサイトは今回の結果に含まれていない可能性があります: {escaped}</p>"
+    )
+
+
+def format_items_as_html(items: list[dict], *, had_analysis_failures: bool = False) -> str:
     """
     スキャン結果アイテムをHTMLのulリストに変換する。
     各アイテムに url が含まれる場合はリンクにする。
     アイテムが0件の場合は "<p>（新着なし）</p>" を返す。
     """
     if not items:
+        if had_analysis_failures:
+            return (
+                "<p>（該当なし — 調査テーマに関連する情報は見つかりませんでした。"
+                "ただし一部サイトの分析に失敗しているため、結果が不完全な可能性があります。"
+                "次回のスケジュール実行をお待ちください）</p>"
+            )
         return (
             "<p>（該当なし — 調査テーマに関連する情報は見つかりませんでした。"
             "監視サイトのURLを見直すか、次回のスケジュール実行をお待ちください）</p>"
@@ -85,6 +110,7 @@ def send_report(
     topic: str,
     new_items: list[dict],
     all_items: list[dict],
+    analysis_failures: list[str] | None = None,
 ) -> bool:
     """
     Resend APIでHTMLメールを送信する。
@@ -100,6 +126,9 @@ def send_report(
     scan_date = now.strftime("%Y-%m-%d %H:%M UTC")
     date_str = now.strftime("%Y-%m-%d")
 
+    failures = analysis_failures or []
+    had_analysis_failures = bool(failures)
+
     template_kwargs = {
         "topic": topic,
         "topic_short": topic_short(topic),
@@ -111,7 +140,14 @@ def send_report(
     subject = sanitize_email_subject(
         render_template(subject_template, **template_kwargs)
     )
-    body = render_template(body_template, **template_kwargs)
+    body = render_template(
+        body_template,
+        had_analysis_failures=had_analysis_failures,
+        **template_kwargs,
+    )
+    failure_notice = format_analysis_failures_notice(failures)
+    if failure_notice:
+        body = failure_notice + "\n" + body
 
     # プレーンテキストを簡易HTMLに変換
     if not body.strip().startswith("<"):

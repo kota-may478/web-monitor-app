@@ -34,8 +34,8 @@ def _scrape_site_with_llm(
     query: str,
     site: dict,
     scan_time: datetime,
-) -> list[dict]:
-    """Gemini でページから関連情報を抽出する。"""
+) -> tuple[list[dict], bool]:
+    """Gemini でページから関連情報を抽出する。戻り値は (items, analysis_failed)。"""
     url = site.get("url", "")
     site_name = site.get("name", url)
     css_selector = site.get("css_selector")
@@ -44,9 +44,9 @@ def _scrape_site_with_llm(
     page_text = scraper.fetch_page_text(url, css_selector)
     if not page_text:
         logger.warning("  → ページテキスト取得失敗")
-        return []
+        return [], True
 
-    items = gemini_extractor.extract_items(
+    items, api_failed = gemini_extractor.extract_items(
         query=query,
         page_url=url,
         site_name=site_name,
@@ -54,7 +54,7 @@ def _scrape_site_with_llm(
         scan_date=scan_time,
     )
     logger.info("  → %d件抽出", len(items))
-    return items
+    return items, api_failed
 
 
 def _scrape_site_with_keywords(site: dict) -> list[dict]:
@@ -103,23 +103,33 @@ def main() -> None:
 
     # 3. 各サイトをスクレイピング / LLM抽出
     all_current_items: list[dict] = []
+    analysis_failures: list[str] = []
     sites = job_def.get("sites", [])
     for site in sites:
+        site_label = site.get("name") or site.get("url", "")
         try:
             if use_llm:
-                items = _scrape_site_with_llm(query, site, scan_time)
+                items, analysis_failed = _scrape_site_with_llm(query, site, scan_time)
+                if analysis_failed:
+                    analysis_failures.append(site_label)
             else:
                 items = _scrape_site_with_keywords(site)
             all_current_items.extend(items)
         except Exception as e:
             logger.error("サイト処理失敗 (%s): %s", site.get("url", ""), e)
+            analysis_failures.append(site_label)
 
     logger.info("全サイト合計: %d件のアイテム", len(all_current_items))
+    if analysis_failures:
+        logger.warning(
+            "一部サイトの分析に失敗: %s",
+            ", ".join(analysis_failures),
+        )
     if not all_current_items:
         if use_llm:
             logger.warning(
                 "抽出結果が0件です。監視サイトのURLが適切か、"
-                "ページに調査テーマに関連する公募情報があるか確認してください。"
+                "ページに調査テーマに関連する情報があるか確認してください。"
             )
         else:
             logger.warning(
@@ -147,6 +157,7 @@ def main() -> None:
             topic=query,
             new_items=new_items,
             all_items=all_current_items,
+            analysis_failures=analysis_failures,
         )
     except Exception as e:
         logger.error("メール送信に失敗: %s", e)

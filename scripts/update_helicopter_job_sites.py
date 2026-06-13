@@ -53,9 +53,9 @@ SITES: list[SiteProposal] = [
         css_selector=None,
     ),
     SiteProposal(
-        url="https://www.gotokyo.org/jp/event/index.html",
-        name="GO TOKYO イベントカレンダー",
-        description="東京都の公式観光イベント情報。首都圏の体験イベントを横断的に確認できる。",
+        url="https://www.gotokyo.org/ja/travel-directory/result/index/event_date_word/this_month",
+        name="GO TOKYO 今月のイベント一覧",
+        description="東京都公式観光サイトの今月開催イベント一覧。首都圏の体験イベントを横断的に確認できる。",
         target_keywords=["イベント", "体験", "東京", "ヘリコプター", "無料", "参加", "開催"],
         css_selector=None,
     ),

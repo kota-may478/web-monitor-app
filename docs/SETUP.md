@@ -19,6 +19,7 @@ For a quick local start, see [README.md](../README.md).
 6. [Add System GitHub Secrets](#6-add-system-github-secrets)
 7. [Deploy to Render](#7-deploy-to-render)
 8. [Verify end-to-end (email via GitHub Actions)](#8-verify-end-to-end-email-via-github-actions)
+9. [Operations & troubleshooting](#9-operations--troubleshooting)
 
 ---
 
@@ -244,9 +245,30 @@ bash scripts/dev.sh
 4. Wait for the run to finish (green check). Open the run log if it fails.
 5. Check your inbox for the report email.
 
-**What a successful run does:** scrape sites → detect new items → send email via Resend → update `JOB_****_STATE`.
+**What a successful run does:** fetch each site → Gemini extracts relevant items → detect new items → send email via Resend → update `JOB_****_STATE`.
+
+**Interpreting results:**
+
+- **0 items, no warning** — no theme-matching content found on reachable pages (or listings are empty).
+- **0 items with “一部サイトの分析に失敗”** — some sites were not analyzed (API quota, 403, etc.). Results may be incomplete; check the Actions log.
+- **New items** — appear under `🆕 新着情報` in the email body.
 
 **If email fails:** check Actions log for Resend errors; confirm `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and recipient address.
+
+For ongoing operations (Gemini quota, updating jobs, URL selection), see **[docs/OPERATIONS.md](OPERATIONS.md)**.
+
+---
+
+## 9. Operations & troubleshooting
+
+See **[docs/OPERATIONS.md](OPERATIONS.md)** for:
+
+- Gemini API usage and quota (sites × runs per day)
+- Partial analysis failure emails
+- Choosing bot-safe monitor URLs
+- Email template placeholders (`{{topic_short}}` in subjects)
+- Updating existing jobs via maintenance scripts
+- `job-meta` files vs GitHub Secrets
 
 ---
 
@@ -284,6 +306,7 @@ Web Monitor App をゼロからデプロイするための手順です。
 6. [GitHub Secrets にシステム用Secretsを追加](#6-github-secrets-にシステム用secretsを追加)
 7. [Render へのデプロイ](#7-render-へのデプロイ)
 8. [エンドツーエンド確認（メール受信テスト）](#8-エンドツーエンド確認メール受信テスト)
+9. [運用・トラブルシューティング](#9-運用--トラブルシューティング)
 
 ---
 
@@ -507,9 +530,30 @@ bash scripts/dev.sh
 4. 実行が成功（緑のチェック）するまで待つ。失敗時はログを確認
 5. 受信トレイでレポートメールを確認
 
-**成功時の流れ:** スクレイピング → 差分検出 → Resend でメール送信 → `JOB_****_STATE` 更新
+**成功時の流れ:** 各サイトを取得 → Gemini が関連情報を抽出 → 差分検出 → Resend でメール送信 → `JOB_****_STATE` 更新
+
+**結果の見方:**
+
+- **0 件・警告なし** — 到達できたページにテーマに合う情報がなかった（または一覧が空）。
+- **0 件＋「一部サイトの分析に失敗」** — 一部サイトが未分析（API 枠・403 等）。結果が不完全な可能性あり。Actions ログを確認。
+- **新着あり** — メール本文の `🆕 新着情報` に表示。
 
 **メールが届かない場合:** Actions ログの Resend エラーを確認。`RESEND_API_KEY`・`RESEND_FROM_EMAIL`・通知先アドレスを再確認。
+
+運用全般（Gemini 枠、ジョブ更新、URL 選定）は **[docs/OPERATIONS.md](OPERATIONS.md)** を参照。
+
+---
+
+## 9. 運用・トラブルシューティング
+
+**[docs/OPERATIONS.md](OPERATIONS.md)** に以下をまとめています:
+
+- Gemini API の消費量と無料枠（サイト数 × 実行回数）
+- 一部サイト分析失敗時のメール表示
+- ボット遮断を避ける監視 URL の選び方
+- メールテンプレートのプレースホルダー（件名は `{{topic_short}}`）
+- メンテナンススクリプトによる既存ジョブの更新
+- `job-meta` と GitHub Secrets の役割分担
 
 ---
 

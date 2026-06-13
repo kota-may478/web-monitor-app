@@ -123,15 +123,15 @@ def extract_items(
     site_name: str,
     page_text: str,
     scan_date: datetime | None = None,
-) -> list[dict]:
+) -> tuple[list[dict], bool]:
     """
     ページテキストから調査テーマに関連する情報を Gemini で抽出する。
 
     Returns:
-        [{"title", "summary", "url", "deadline", "text", "source_site", ...}]
+        (items, api_failed) — items は抽出結果、api_failed は API/解析エラー時 True
     """
     if not page_text.strip():
-        return []
+        return [], False
 
     if scan_date is None:
         scan_date = datetime.now(timezone.utc)
@@ -159,13 +159,13 @@ def extract_items(
 
     if text is None:
         logger.error("Gemini抽出に失敗: %s", last_error)
-        return []
+        return [], True
 
     try:
         data = _extract_json(text)
     except json.JSONDecodeError as e:
         logger.error("Gemini応答のJSONパースに失敗: %s", e)
-        return []
+        return [], True
 
     results: list[dict] = []
     for raw in data.get("items", [])[:10]:
@@ -183,4 +183,4 @@ def extract_items(
         )
     else:
         logger.info("Gemini抽出: %s → %d件", page_url, len(results))
-    return results
+    return results, False
