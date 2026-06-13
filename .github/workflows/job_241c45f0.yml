@@ -1,0 +1,27 @@
+name: "Monitor|ヘリコプター体験搭乗の無料イベント情報（東京近郊）|7sites|毎週土曜日 9:00 JST|2026-06-13T09:03:13.400Z"
+on:
+  schedule:
+    - cron: "0 0 * * 6"
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    env:
+      JOB_ID: "241c45f0-fbee-416e-8a5e-f8e608722e7c"
+      JOB_DEF_JSON: ${{ secrets.JOB_241C45F0_DEF }}
+      JOB_STATE_JSON: ${{ secrets.JOB_241C45F0_STATE }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GITHUB_TOKEN_FOR_SECRETS: ${{ secrets.REPO_PAT }}
+      GITHUB_REPO: "kota-may478/web-monitor-app"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r scheduler/requirements.txt
+      - name: Run monitor job
+        run: python scheduler/run_job.py
