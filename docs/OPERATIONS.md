@@ -8,19 +8,26 @@ Day-2 operations for Web Monitor App after [SETUP.md](SETUP.md) is complete.
 
 ## Gemini API usage
 
-Each scheduled run calls Gemini **once per monitored site** (primary model `gemini-2.5-flash`, fallback `gemini-2.0-flash` on failure).
+Each scheduled run calls Gemini as follows:
+
+| Mode | API calls per run | Default |
+|------|-------------------|---------|
+| **Batch** (`GEMINI_BATCH_EXTRACTION=true`) | **1** | Yes |
+| Per-site (`GEMINI_BATCH_EXTRACTION=false`) | 1 × number of sites (5–7) | No |
 
 | Factor | Impact |
 |--------|--------|
 | Sites per job | 5–7 typical |
 | Runs per day | Cron schedule + manual **Run workflow** |
-| Quota | **Per model** on Google AI Studio free tier — limits change; check [AI Studio usage](https://aistudio.google.com/) |
+| Free tier (gemini-2.5-flash) | **20 requests/day per model** — see [AI Studio usage](https://aistudio.google.com/) |
+| UI site proposal | Also uses Gemini + Google Search (same API key) |
 
 **Tips**
 
-- Avoid repeated manual runs on the same day while debugging — you can exhaust the daily quota quickly.
-- If logs show `429 RESOURCE_EXHAUSTED`, wait until the quota resets or upgrade the API plan.
-- Site proposal (`/api/agent/propose`) also uses Gemini + Google Search — separate from scheduled extraction.
+- With batch mode, one weekly job uses **1 API call** instead of 7 — fits the free tier much better.
+- Avoid repeated manual runs and `/api/agent/propose` on the same day while debugging.
+- If logs show `429 RESOURCE_EXHAUSTED`, wait until the quota resets (Pacific midnight) or enable billing in AI Studio.
+- `gemini-2.0-flash` fallback is **not available on the free tier** (limit 0) — do not rely on it.
 
 ---
 
@@ -126,19 +133,26 @@ If job-meta is missing for an old job, the scheduler still works from Secrets on
 
 ## Gemini API の消費量
 
-スケジュール実行では、監視サイト **1 件あたり Gemini を 1 回** 呼び出します（主モデル `gemini-2.5-flash`、失敗時は `gemini-2.0-flash` にフォールバック）。
+スケジュール実行での Gemini 呼び出し:
+
+| モード | 1回の実行あたりの API 呼び出し | デフォルト |
+|--------|-------------------------------|------------|
+| **バッチ**（`GEMINI_BATCH_EXTRACTION=true`） | **1回** | 有効 |
+| サイトごと（`GEMINI_BATCH_EXTRACTION=false`） | サイト数 × 1（5〜7回） | 無効 |
 
 | 要因 | 影響 |
 |------|------|
 | サイト数 | 通常 5〜7 件 |
 | 1 日の実行回数 | cron + 手動 **Run workflow** |
-| 無料枠 | Google AI Studio の **モデルごと** の上限 — [利用状況](https://aistudio.google.com/) で確認 |
+| 無料枠（gemini-2.5-flash） | **1日20リクエスト/モデル** — [利用状況](https://aistudio.google.com/) で確認 |
+| UI のサイト提案 | Gemini + Google 検索も同じ API キーを消費 |
 
 **注意**
 
-- デバッグで同日に手動実行を繰り返すと、無料枠を使い切りやすい。
-- ログに `429 RESOURCE_EXHAUSTED` が出たら、枠のリセットを待つかプランを見直す。
-- UI のサイト提案（`/api/agent/propose`）も Gemini + Google 検索を使う（スケジュール実行とは別カウント）。
+- バッチモードなら週1回のジョブは **API 1回** で済む（従来は7回）。
+- デバッグで同日に手動実行や「AIに再提案」を繰り返すと無料枠を使い切りやすい。
+- ログに `429 RESOURCE_EXHAUSTED` が出たら、枠リセット（太平洋時間の日次リセット）を待つか AI Studio で課金を有効化。
+- `gemini-2.0-flash` フォールバックは **無料枠では使えない**（上限0）— 当てにしない。
 
 ---
 

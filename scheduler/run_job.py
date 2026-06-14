@@ -15,6 +15,7 @@ GitHub Actionsから呼び出されるメインスクリプト。
 import logging
 import os
 import sys
+import time
 from datetime import datetime, timezone
 
 import diff_checker
@@ -34,8 +35,8 @@ def _scrape_site_with_llm(
     query: str,
     site: dict,
     scan_time: datetime,
-) -> tuple[list[dict], bool]:
-    """Gemini でページから関連情報を抽出する。戻り値は (items, analysis_failed)。"""
+) -> tuple[list[dict], bool, bool]:
+    """Gemini でページから関連情報を抽出する。戻り値は (items, analysis_failed, quota_exhausted)。"""
     url = site.get("url", "")
     site_name = site.get("name", url)
     css_selector = site.get("css_selector")
@@ -44,17 +45,62 @@ def _scrape_site_with_llm(
     page_text = scraper.fetch_page_text(url, css_selector)
     if not page_text:
         logger.warning("  → ページテキスト取得失敗")
-        return [], True
+        return [], True, False
 
-    items, api_failed = gemini_extractor.extract_items(
+    result = gemini_extractor.extract_items(
         query=query,
         page_url=url,
         site_name=site_name,
         page_text=page_text,
         scan_date=scan_time,
     )
-    logger.info("  → %d件抽出", len(items))
-    return items, api_failed
+    logger.info("  → %d件抽出", len(result.items))
+    return result.items, result.api_failed, result.quota_exhausted
+
+
+def _scrape_all_with_llm_batch(
+    query: str,
+    sites: list[dict],
+    scan_time: datetime,
+) -> tuple[list[dict], list[str], bool]:
+    """全サイトをまとめて Gemini 抽出。戻り値は (items, failures, quota_exhausted)。"""
+    pages: list[dict] = []
+    failures: list[str] = []
+
+    for site in sites:
+        site_label = site.get("name") or site.get("url", "")
+        url = site.get("url", "")
+        css_selector = site.get("css_selector")
+        logger.info("ページ取得: %s (%s)", site_label, url)
+        page_text = scraper.fetch_page_text(url, css_selector)
+        if not page_text:
+            logger.warning("  → ページテキスト取得失敗")
+            failures.append(site_label)
+            continue
+        pages.append(
+            {
+                "site_name": site_label,
+                "page_url": url,
+                "page_text": page_text,
+            }
+        )
+
+    if not pages:
+        return [], failures, False
+
+    result = gemini_extractor.extract_items_batch(query, pages, scan_date=scan_time)
+    if result.api_failed:
+        failures.extend(page["site_name"] for page in pages)
+        # 重複除去（取得失敗とAPI失敗で同じ名前は1つに）
+        seen: set[str] = set()
+        unique_failures: list[str] = []
+        for name in failures:
+            if name not in seen:
+                seen.add(name)
+                unique_failures.append(name)
+        return [], unique_failures, result.quota_exhausted
+
+    return result.items, failures, False
 
 
 def _scrape_site_with_keywords(site: dict) -> list[dict]:
@@ -76,7 +122,10 @@ def main() -> None:
     scan_time = datetime.now(timezone.utc)
 
     if use_llm:
-        logger.info("抽出モード: Gemini LLM")
+        if gemini_extractor.batch_extraction_enabled():
+            logger.info("抽出モード: Gemini LLM（バッチ — 1ジョブあたりAPI 1回）")
+        else:
+            logger.info("抽出モード: Gemini LLM（サイトごと）")
     else:
         logger.warning(
             "GEMINI_API_KEY 未設定 — キーワードマッチモードで実行します。"
@@ -104,20 +153,38 @@ def main() -> None:
     # 3. 各サイトをスクレイピング / LLM抽出
     all_current_items: list[dict] = []
     analysis_failures: list[str] = []
+    quota_exhausted = False
     sites = job_def.get("sites", [])
-    for site in sites:
-        site_label = site.get("name") or site.get("url", "")
-        try:
-            if use_llm:
-                items, analysis_failed = _scrape_site_with_llm(query, site, scan_time)
-                if analysis_failed:
+
+    try:
+        if use_llm and gemini_extractor.batch_extraction_enabled():
+            all_current_items, analysis_failures, quota_exhausted = _scrape_all_with_llm_batch(
+                query, sites, scan_time
+            )
+        else:
+            delay_sec = gemini_extractor.inter_request_delay_sec()
+            for index, site in enumerate(sites):
+                site_label = site.get("name") or site.get("url", "")
+                if use_llm and index > 0 and delay_sec > 0:
+                    logger.info("Gemini API 間隔待機: %.1f秒", delay_sec)
+                    time.sleep(delay_sec)
+                try:
+                    if use_llm:
+                        items, analysis_failed, site_quota = _scrape_site_with_llm(
+                            query, site, scan_time
+                        )
+                        if analysis_failed:
+                            analysis_failures.append(site_label)
+                        if site_quota:
+                            quota_exhausted = True
+                    else:
+                        items = _scrape_site_with_keywords(site)
+                    all_current_items.extend(items)
+                except Exception as e:
+                    logger.error("サイト処理失敗 (%s): %s", site.get("url", ""), e)
                     analysis_failures.append(site_label)
-            else:
-                items = _scrape_site_with_keywords(site)
-            all_current_items.extend(items)
-        except Exception as e:
-            logger.error("サイト処理失敗 (%s): %s", site.get("url", ""), e)
-            analysis_failures.append(site_label)
+    except Exception as e:
+        logger.error("スクレイピング処理に失敗: %s", e)
 
     logger.info("全サイト合計: %d件のアイテム", len(all_current_items))
     if analysis_failures:
@@ -125,11 +192,21 @@ def main() -> None:
             "一部サイトの分析に失敗: %s",
             ", ".join(analysis_failures),
         )
+    if quota_exhausted:
+        logger.warning(
+            "Gemini API 無料枠の上限に達した可能性があります。"
+            "https://aistudio.google.com/ で利用状況を確認してください。"
+        )
     if not all_current_items:
-        if use_llm:
+        if use_llm and not analysis_failures:
             logger.warning(
                 "抽出結果が0件です。監視サイトのURLが適切か、"
                 "ページに調査テーマに関連する情報があるか確認してください。"
+                "（現時点で募集中のイベントがない可能性もあります）"
+            )
+        elif use_llm:
+            logger.warning(
+                "抽出結果が0件です。一部サイトの分析失敗の影響も確認してください。"
             )
         else:
             logger.warning(
@@ -158,6 +235,7 @@ def main() -> None:
             new_items=new_items,
             all_items=all_current_items,
             analysis_failures=analysis_failures,
+            quota_exhausted=quota_exhausted,
         )
     except Exception as e:
         logger.error("メール送信に失敗: %s", e)

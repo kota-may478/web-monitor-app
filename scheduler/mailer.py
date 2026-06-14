@@ -50,16 +50,32 @@ def render_template(
     return result
 
 
-def format_analysis_failures_notice(failures: list[str]) -> str:
+def format_analysis_failures_notice(
+    failures: list[str],
+    *,
+    quota_exhausted: bool = False,
+) -> str:
     """分析失敗サイトがある場合の警告ブロックを返す。"""
-    if not failures:
+    if not failures and not quota_exhausted:
         return ""
-    escaped = ", ".join(html.escape(name) for name in failures)
-    return (
-        "<p style='color:#b45309;background:#fffbeb;padding:12px;border-left:4px solid #f59e0b'>"
-        "⚠️ <strong>一部サイトの分析に失敗しました</strong>（APIエラー・ページ取得失敗等）。"
-        f"以下のサイトは今回の結果に含まれていない可能性があります: {escaped}</p>"
-    )
+    parts: list[str] = [
+        "<p style='color:#b45309;background:#fffbeb;padding:12px;border-left:4px solid #f59e0b'>",
+        "⚠️ <strong>一部サイトの分析に失敗しました</strong>",
+    ]
+    if quota_exhausted:
+        parts.append(
+            "（<strong>Gemini API 無料枠の上限</strong>に達した可能性があります。"
+            "gemini-2.5-flash は無料枠で <strong>1日20リクエスト/モデル</strong> です。"
+            "翌日のリセット後に再実行するか、"
+            "<a href='https://aistudio.google.com/'>Google AI Studio</a> で課金を有効にしてください）"
+        )
+    else:
+        parts.append("（APIエラー・ページ取得失敗等）")
+    if failures:
+        escaped = ", ".join(html.escape(name) for name in failures)
+        parts.append(f"。以下のサイトは今回の結果に含まれていない可能性があります: {escaped}")
+    parts.append("</p>")
+    return "".join(parts)
 
 
 def format_items_as_html(items: list[dict], *, had_analysis_failures: bool = False) -> str:
@@ -111,6 +127,7 @@ def send_report(
     new_items: list[dict],
     all_items: list[dict],
     analysis_failures: list[str] | None = None,
+    quota_exhausted: bool = False,
 ) -> bool:
     """
     Resend APIでHTMLメールを送信する。
@@ -145,7 +162,9 @@ def send_report(
         had_analysis_failures=had_analysis_failures,
         **template_kwargs,
     )
-    failure_notice = format_analysis_failures_notice(failures)
+    failure_notice = format_analysis_failures_notice(
+        failures, quota_exhausted=quota_exhausted
+    )
     if failure_notice:
         body = failure_notice + "\n" + body
 
