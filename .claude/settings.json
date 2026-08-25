@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(wslpath -u \"\\\\\\\\wsl.localhost\\\\Ubuntu-22.04\\\\home\\\\winder17wsl\\\\01_Private\\\\Program\\\\web-monitor-app\")",
+      "PowerShell(wsl -d Ubuntu-22.04 bash -c \"cd /home/winder17wsl/01_Private/Program/web-monitor-app/frontend && npm run build 2>&1 | tail -40\")",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -l -c \"cd /home/winder17wsl/01_Private/Program/web-monitor-app/frontend && npm run build 2>&1 | tail -40\")",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -c \"cd ~ && cd /home/winder17wsl/01_Private/Program/web-monitor-app/frontend && npx tsc --noEmit 2>&1 | tail -30\")",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -c \"export WSLENV=''; cd /home/winder17wsl/01_Private/Program/web-monitor-app/frontend && node ./node_modules/.bin/tsc --noEmit 2>&1 | tail -30\")",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -c \"which node || ls /usr/local/bin/node 2>/dev/null || ls /usr/bin/node 2>/dev/null || nvm use 2>/dev/null | head -3\")",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -l -c \"which node && node --version\" 2>&1)",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -l -c \"source ~/.nvm/nvm.sh 2>/dev/null; which node; node --version\" 2>&1)",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -l -c \"source ~/.nvm/nvm.sh 2>/dev/null; cd /home/winder17wsl/01_Private/Program/web-monitor-app/frontend && npm run build 2>&1 | tail -40\" 2>&1)",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -l -c \"source ~/.nvm/nvm.sh 2>/dev/null; cd /home/winder17wsl/01_Private/Program/web-monitor-app/frontend && npx tsc --noEmit 2>&1\")",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -c \"cd /home/winder17wsl/01_Private/Program/web-monitor-app && python3 -m py_compile backend/main.py backend/routers/agent.py backend/routers/jobs.py backend/services/scraper.py backend/services/auth.py backend/services/gemini_agent.py backend/services/github_service.py backend/models/schemas.py scheduler/run_job.py scheduler/mailer.py scheduler/secrets_store.py scheduler/scraper.py scheduler/diff_checker.py && echo OK\" 2>&1)",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -c \"cd /home/winder17wsl/01_Private/Program/web-monitor-app && git diff --stat\" 2>&1)",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -c \"cd /home/winder17wsl/01_Private/Program/web-monitor-app && git status\" 2>&1)",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -c \"cd /home/winder17wsl/01_Private/Program/web-monitor-app && git diff | grep -iE 'ghp_|sk-|re_[a-zA-Z0-9]+' | head -5 || echo 'No token patterns found'\")",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -l -c \"source ~/.nvm/nvm.sh 2>/dev/null; cd /home/winder17wsl/01_Private/Program/web-monitor-app/frontend && npx tsc --noEmit && echo 'TSC: OK' && npm run build 2>&1 | tail -5\" 2>&1)",
+      "PowerShell(wsl -d Ubuntu-22.04 -- bash -c \"cd /home/winder17wsl/01_Private/Program/web-monitor-app && python3 -m py_compile backend/main.py backend/routers/agent.py backend/routers/jobs.py backend/services/auth.py backend/services/scraper.py backend/models/schemas.py scheduler/mailer.py && echo 'Python: OK'\" 2>&1)",
+      "Bash(wsl *)"
+    ]
+  }
+}
